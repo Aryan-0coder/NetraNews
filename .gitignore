@@ -1,0 +1,13 @@
+# Secrets / local env — never commit real keys
+.env.local
+**/.env.local
+
+# Build output
+backend/target/
+
+# IDE / OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db

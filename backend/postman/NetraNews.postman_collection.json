@@ -1,0 +1,35 @@
+{
+  "info": {
+    "name": "NetraNews API",
+    "description": "Use the bulk request with sample-articles.json to add 12 articles.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" }
+  ],
+  "item": [
+    {
+      "name": "Bulk import 12 articles",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "file", "file": { "src": "sample-articles.json" } },
+        "url": "{{baseUrl}}/api/news/bulk"
+      }
+    },
+    {
+      "name": "Get all articles",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/news"
+      }
+    },
+    {
+      "name": "Search sports articles",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/news?category=खेल"
+      }
+    }
+  ]
+}

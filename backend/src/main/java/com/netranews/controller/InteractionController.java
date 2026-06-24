@@ -1,0 +1,9 @@
+package com.netranews.controller;
+import java.util.*; import java.util.stream.Collectors; import org.springframework.http.HttpStatus; import org.springframework.web.bind.annotation.*; import com.netranews.dto.ApiDtos; import com.netranews.model.*; import com.netranews.repository.*; import com.netranews.service.NewsService;
+@RestController @RequestMapping("/api") public class InteractionController {private final BookmarkRepository bookmarks;private final CommentRepository comments;private final NewsService news;public InteractionController(BookmarkRepository b,CommentRepository c,NewsService n){bookmarks=b;comments=c;news=n;}
+ @GetMapping("/bookmarks/{email}") public List<News> bookmarks(@PathVariable String email){return bookmarks.findByUserEmail(email).stream().map(b->news.get(b.getNewsId())).collect(Collectors.toList());}
+ @PostMapping("/bookmarks/{email}/{newsId}") @ResponseStatus(HttpStatus.CREATED) public Bookmark bookmark(@PathVariable String email,@PathVariable String newsId){news.get(newsId);return bookmarks.findByUserEmailAndNewsId(email,newsId).orElseGet(()->{Bookmark b=new Bookmark();b.setUserEmail(email);b.setNewsId(newsId);return bookmarks.save(b);});}
+ @DeleteMapping("/bookmarks/{email}/{newsId}") @ResponseStatus(HttpStatus.NO_CONTENT) public void unbookmark(@PathVariable String email,@PathVariable String newsId){bookmarks.findByUserEmailAndNewsId(email,newsId).ifPresent(bookmarks::delete);}
+ @GetMapping("/news/{newsId}/comments") public List<Comment> comments(@PathVariable String newsId){return comments.findByNewsIdOrderByCreatedAtDesc(newsId);}
+ @PostMapping("/news/{newsId}/comments") @ResponseStatus(HttpStatus.CREATED) public Comment comment(@PathVariable String newsId,@RequestBody ApiDtos.CommentRequest r){news.get(newsId);Comment c=new Comment();c.setNewsId(newsId);c.setUserEmail(r.userEmail);c.setUserName(r.userName);c.setText(r.text);return comments.save(c);}
+}

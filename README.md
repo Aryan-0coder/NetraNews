@@ -1,87 +1,121 @@
-# NetraNews Front-End Template
+# NetraNews
 
-A responsive, dependency-free news website UI based on the supplied NetraNews PRD and authentication specification.
+A responsive, Hindi-language news website with an AI assistant. The front-end is a dependency-free single-page app; the backend is a Spring Boot + MongoDB REST API with an OpenAI-compatible LLM integration (Groq by default) for summaries, translation, and a grounded news chatbot.
 
 ## Prerequisites
 
-- Java 8 (1.8) and Maven 3.6+ to run the backend
-- Python 3 (optional) to serve the front-end locally, or any static file server
-- Git for source control
+- **Java 8+** (the project targets Java 8; it builds and runs fine on newer JDKs such as 17/21)
+- **MongoDB** running locally, or a MongoDB Atlas connection string
+- Python 3 (optional) or any static file server for the front-end
+- Git
 
-## Run locally
+Maven is **not** required — the repo ships the Maven wrapper (`mvnw` / `mvnw.cmd`), which downloads the correct Maven version automatically.
 
-Open `index.html` directly in a browser, or serve the folder with any static server. Example (Python):
+## Quick start
 
-```powershell
-python -m http.server 8080
-```
+### 1. Backend
 
-Visit `http://localhost:8080`.
-
-Notes:
-- The example serves the front-end on port 8080; Spring Boot also defaults to 8080 — run the backend on a different port, or configure a proxy.
-- PowerShell example for setting env vars uses `$env:NAME = "value"`; on Bash use `export NAME=value`.
-
-## Included flows
-
-- Responsive homepage, category/search listings, and article details
-- Mobile drawer, search panel, breaking-news strip, footer, and newsletter
-- Mock login using `localStorage`, profile interests, bookmarks, and comments
-- Browser text-to-speech, AI summary, translation control, and news chatbot UI
-- Interest-based feed ranking stored locally for the front-end demo
-- Admin dashboard template for articles, categories, and user management
-
-## Backend integration
-
-Replace the mock data in `assets/js/data.js` and local state in `assets/js/app.js` with the Spring Boot endpoints described in the project documents. The UI expects the following endpoints (examples):
-
-- `POST /api/ai/summary`
-- `POST /api/ai/chat`
-- `GET /api/news/{id}/translate?language=en`
-
-Implement these endpoints server-side and call Google AI Studio/Gemini from the server — never expose `GEMINI_API_KEY` in browser JavaScript. Store articles and user interests in MongoDB and build grounded chatbot prompts on the server so the client only receives final responses.
-
-Security note: production authentication should use Spring Security, BCrypt password hashing, short-lived JWTs (with refresh-token rotation), and secure HttpOnly cookies rather than storing identity in `localStorage`.
-
-## Spring Boot backend
-
-The complete API project is in the `backend/` directory. It targets Spring Boot 2.7 and uses MongoDB repositories, a service layer, validation, centralized error handling, and configurable CORS.
-
-Run locally (PowerShell):
-
-```powershell
+```bash
 cd backend
-$env:GEMINI_API_KEY="your-google-ai-studio-key"
-mvn spring-boot:run
+cp .env.example .env.local        # then open .env.local and paste your Groq API key
+./run.sh                          # macOS/Linux/Git Bash
+#   run.cmd                       # Windows cmd/PowerShell
 ```
 
-Common routes:
+`run.sh` / `run.cmd` load `.env.local` and start the API on `http://localhost:8080`.
 
-- `GET /api/news`, `GET /api/news/{id}`, `GET /api/news?category=खेल`, `GET /api/news?q=IPL`
-- `GET /api/news/feed/{email}` (preference-ranked stories)
+- No API key? The app still runs — AI features fall back to built-in Hindi/English responses.
+- No `.env.local`? You can also run `./mvnw spring-boot:run` directly and set env vars yourself.
+
+### 2. Front-end
+
+Serve the project root with any static server (use a port other than 8080 so it doesn't clash with the backend):
+
+```bash
+python -m http.server 5500
+```
+
+Then open `http://localhost:5500`. Port `5500` is one of the origins allowed by the backend's CORS config.
+
+The front-end auto-detects the API at `http://localhost:8080`. It also merges in local mock articles and offline AI fallbacks, so it remains usable even if the backend is down.
+
+## Configuration
+
+Backend config is in `backend/src/main/resources/application.yml` and is driven entirely by environment variables. Set them in `backend/.env.local` (see `backend/.env.example`):
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `LLM_API_KEY` | _(empty)_ | API key for live AI. Empty → offline fallbacks. |
+| `LLM_BASE_URL` | `https://api.groq.com/openai/v1` | OpenAI-compatible endpoint. |
+| `LLM_MODEL` | `llama-3.3-70b-versatile` | Model id (must match the provider). |
+| `MONGODB_URI` | `mongodb://localhost:27017/netradb` | Mongo connection; set an Atlas URI for the cloud. |
+| `PORT` | `8080` | API port. |
+| `CORS_ORIGINS` | `localhost:3000,5500,8080` | Allowed front-end origins. |
+
+`.env.local` is gitignored — **never commit real keys.**
+
+### Choosing an AI provider
+
+The backend talks to any OpenAI-compatible `/chat/completions` API, so you can switch providers by changing two env vars:
+
+| Provider | `LLM_BASE_URL` | Notes |
+| --- | --- | --- |
+| **Groq** (default) | `https://api.groq.com/openai/v1` | Free key at [console.groq.com](https://console.groq.com/keys); fast, good Hindi. |
+| OpenRouter | `https://openrouter.ai/api/v1` | One key, many free models. |
+| Mistral | `https://api.mistral.ai/v1` | Free tier. |
+| Ollama (local) | `http://localhost:11434/v1` | Offline, no key; set `LLM_MODEL` to a pulled model. |
+
+## API endpoints
+
+News:
+- `GET /api/news`, `GET /api/news?category=खेल`, `GET /api/news?q=IPL`
+- `GET /api/news/{id}`, `GET /api/news/count`
+- `GET /api/news/feed/{email}` — interest-ranked stories
+- `POST /api/news`, `POST /api/news/bulk`, `PUT /api/news/{id}`, `DELETE /api/news/{id}`
+
+Auth & profile:
 - `POST /api/auth/register`, `POST /api/auth/login`
 - `PUT /api/auth/users/{email}/interests`
-- CRUD routes under `/api/news` for editorial tooling
-- Bookmark and comment routes under `/api/bookmarks` and `/api/news/{id}/comments`
-- `POST /api/ai/summary`, `POST /api/ai/chat`, `GET /api/news/{id}/translate`
 
-Environment variables (examples):
+Interactions:
+- `GET/POST/DELETE /api/bookmarks/{email}[/{newsId}]`
+- `GET/POST /api/news/{newsId}/comments`
 
-- `MONGODB_URI` — MongoDB connection string, e.g. `mongodb://user:pass@host:27017/netranews`
-- `GEMINI_API_KEY` — Google AI Studio key (keep secret, set on server)
-- `GEMINI_MODEL` — recommended model id (e.g. `models/gpt-4o-mini` or your deployed name)
-- `CORS_ORIGINS` — allowed origins for cross-origin requests
+AI:
+- `POST /api/ai/summarize` — body `{articleId?, content?, language}` → `{summary, keyPoints[]}`
+- `POST /api/ai/chat` — body `{message, language}` → `{answer}`
+- `GET /api/ai/translate/{id}/{language}` → `{title, summary, content}`
 
-Deployment note: Put front-end and backend behind a reverse proxy and forward `/api/*` to the Spring Boot app so hash-based routes remain deep-link-safe.
+`backend/postman/` contains a Postman collection and `sample-articles.json` you can POST to `/api/news/bulk` to seed data.
 
-## Contributing
+## Front-end features
 
-Contributions welcome. Please add a short `CONTRIBUTING.md` with commit guidelines and open a PR for non-trivial changes.
+- Responsive homepage, category/search listings, and article pages
+- Interest-based feed ranking, bookmarks, and comments
+- AI summary, multi-language translation, and a grounded news chatbot (netrabot)
+- Browser text-to-speech, breaking-news strip, mobile drawer, and search panel
 
-## License
+Front-end auth is a `localStorage`-based demo. Production auth should use Spring Security, BCrypt (already used for password hashing), and short-lived JWTs rather than client-side identity.
 
-Add a `LICENSE` file to indicate project licensing (for example, MIT).
+## Build & test
 
----
+```bash
+cd backend
+./mvnw package        # builds target/netranews-api-1.0.0.jar
+./mvnw test           # runs tests
+java -jar target/netranews-api-1.0.0.jar   # run the packaged jar
+```
 
-If you want, I can add the `CONTRIBUTING.md` and `LICENSE` files now, and update `README.md` further with specific env examples or ports. Tell me which license you prefer.
+## Project layout
+
+```
+backend/   Spring Boot API (controllers, services, repositories, models)
+assets/    Front-end JS and CSS (app.js is the core SPA)
+index.html Front-end entry point
+```
+
+## Security notes
+
+- All LLM calls go through the backend; never expose `LLM_API_KEY` in browser code.
+- Keep secrets in `.env.local` (gitignored), not in `application.yml` or commits.
+- Put the front-end and backend behind a reverse proxy in production, forwarding `/api/*` to the API so hash-based routes stay deep-link-safe.

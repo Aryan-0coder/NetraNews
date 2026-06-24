@@ -11,8 +11,9 @@ import com.netranews.model.News;
   private final NewsService news; 
   private final RestTemplate http=new RestTemplate(); 
   private final ObjectMapper json=new ObjectMapper();
-  @Value("${gemini.api-key:}") 
-  private String apiKey; @Value("${gemini.model}") private String model;
+  @Value("${llm.api-key:}") private String apiKey;
+  @Value("${llm.model}") private String model;
+  @Value("${llm.base-url}") private String baseUrl;
   public AiService(NewsService n){news=n;}
   public ApiDtos.SummaryResponse summarize(ApiDtos.AiRequest req){
     News item=req.articleId==null?null:news.get(req.articleId);
@@ -55,7 +56,15 @@ import com.netranews.model.News;
     }
   }
   public Map<String,String> translate(String id,String language){News n=news.get(id);if(apiKey.isEmpty()){Map<String,String> m=new HashMap<>();m.put("title",n.getTitle());m.put("summary",n.getSummary());m.put("content",n.getContent());return m;}try{JsonNode root=json.readTree(generate("Translate to "+language+". Return JSON only with title, summary, content:\n"+json.writeValueAsString(n)));Map<String,String> m=new HashMap<>();m.put("title",root.path("title").asText());m.put("summary",root.path("summary").asText());m.put("content",root.path("content").asText());return m;}catch(Exception e){throw new IllegalStateException("Translation service unavailable");}}
-  private String generate(String prompt)throws Exception{String url="https://generativelanguage.googleapis.com/v1beta/models/"+model+":generateContent?key="+apiKey;Map<String,Object> part=Collections.singletonMap("text",prompt);Map<String,Object> content=Collections.singletonMap("parts",Collections.singletonList(part));Map<String,Object> body=Collections.singletonMap("contents",Collections.singletonList(content));ResponseEntity<JsonNode> res=http.postForEntity(url,body,JsonNode.class);return res.getBody().path("candidates").path(0).path("content").path("parts").path(0).path("text").asText().replace("```json","").replace("```","").trim();}
+  // OpenAI-compatible chat completions (Groq, OpenRouter, Mistral, Ollama, LM Studio, ...). Provider is set via llm.base-url / llm.model.
+  private String generate(String prompt)throws Exception{
+    String url=baseUrl+"/chat/completions";
+    Map<String,Object> message=new HashMap<>();message.put("role","user");message.put("content",prompt);
+    Map<String,Object> body=new HashMap<>();body.put("model",model);body.put("messages",Collections.singletonList(message));body.put("temperature",0.3);
+    HttpHeaders headers=new HttpHeaders();headers.setContentType(MediaType.APPLICATION_JSON);headers.setBearerAuth(apiKey);
+    ResponseEntity<JsonNode> res=http.postForEntity(url,new HttpEntity<>(body,headers),JsonNode.class);
+    return res.getBody().path("choices").path(0).path("message").path("content").asText().replace("```json","").replace("```","").trim();
+  }
   private ApiDtos.SummaryResponse fallbackSummary(String s,String language){
     if(language!=null && language.equalsIgnoreCase("hi")){
       return new ApiDtos.SummaryResponse(s,Arrays.asList("यह लेख वर्तमान घटनाक्रम की मुख्य जानकारी देता है।",s,"आगे के आधिकारिक अपडेट की प्रतीक्षा है।"));

@@ -3,7 +3,7 @@ server:
 spring:
   data:
     mongodb:
-      uri: mongodb+srv://aryangupta457023_db_user:aryan1234@netranewscluster.xvrvbam.mongodb.net/netradb?retryWrites=true&w=majority&appName=NetraNewsCluster
+      uri: mongodb+srv://aryangupta457023_db_user:******@netranewscluster.xvrvbam.mongodb.net/netradb?retryWrites=true&w=majority&appName=NetraNewsCluster
 gemini:
   api-key: ${GEMINI_API_KEY:}
   model: ${GEMINI_MODEL:gemini-2.0-flash}

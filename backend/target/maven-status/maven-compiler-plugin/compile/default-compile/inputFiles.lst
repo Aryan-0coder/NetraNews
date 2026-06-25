@@ -1,6 +1,5 @@
 D:\NetraNews\backend\src\main\java\com\netranews\model\Comment.java
 D:\NetraNews\backend\src\main\java\com\netranews\model\News.java
-D:\NetraNews\backend\src\main\java\com\netranews\config\CorsConfig.java
 D:\NetraNews\backend\src\main\java\com\netranews\NetraNewsApplication.java
 D:\NetraNews\backend\src\main\java\com\netranews\model\User.java
 D:\NetraNews\backend\src\main\java\com\netranews\config\WebConfig.java
@@ -11,6 +10,7 @@ D:\NetraNews\backend\src\main\java\com\netranews\controller\InteractionControlle
 D:\NetraNews\backend\src\main\java\com\netranews\dto\ApiDtos.java
 D:\NetraNews\backend\src\main\java\com\netranews\controller\AuthController.java
 D:\NetraNews\backend\src\main\java\com\netranews\controller\NewsController.java
+D:\NetraNews\backend\src\main\java\com\netranews\config\AdminSeeder.java
 D:\NetraNews\backend\src\main\java\com\netranews\service\AuthService.java
 D:\NetraNews\backend\src\main\java\com\netranews\repository\CommentRepository.java
 D:\NetraNews\backend\src\main\java\com\netranews\model\Bookmark.java

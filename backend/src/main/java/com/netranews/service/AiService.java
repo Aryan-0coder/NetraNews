@@ -47,7 +47,9 @@ import com.netranews.model.News;
     }
 
     try{
-      return new ApiDtos.ChatResponse(generate("Answer only from the supplied news. Say when information is unavailable. Language: "+req.language+"\nNEWS:\n"+source+"\nQUESTION: "+req.message));
+      // Hybrid: prefer the supplied NetraNews articles, but fall back to the model's own knowledge when they don't cover the question.
+      String prompt="You are NetraBot, a helpful news assistant. Prefer the supplied NetraNews articles when they are relevant. If they do not cover the question, answer from your general knowledge and briefly note that it is not from NetraNews's articles. You have no live internet access, so for 'today'/'latest' style questions add a short caveat that your information may be out of date. Reply only in this language: "+req.language+".\nNEWS:\n"+source+"\nQUESTION: "+req.message;
+      return new ApiDtos.ChatResponse(generate(prompt));
     }catch(Exception e){
       if(req!=null && req.language!=null && req.language.equalsIgnoreCase("hi")){
         return new ApiDtos.ChatResponse("अभी AI सेवा उपलब्ध नहीं है। संबंधित खबर: "+(context.isEmpty()?"नहीं मिली":context.get(0).getTitle()));
@@ -65,11 +67,16 @@ import com.netranews.model.News;
     ResponseEntity<JsonNode> res=http.postForEntity(url,new HttpEntity<>(body,headers),JsonNode.class);
     return res.getBody().path("choices").path(0).path("message").path("content").asText().replace("```json","").replace("```","").trim();
   }
+  // Offline/no-key fallback. Without the LLM we cannot translate the (Hindi) source summary `s`,
+  // so for non-Hindi we return fully localized generic text instead of presenting Hindi as English/French/Spanish.
   private ApiDtos.SummaryResponse fallbackSummary(String s,String language){
-    if(language!=null && language.equalsIgnoreCase("hi")){
-      return new ApiDtos.SummaryResponse(s,Arrays.asList("यह लेख वर्तमान घटनाक्रम की मुख्य जानकारी देता है।",s,"आगे के आधिकारिक अपडेट की प्रतीक्षा है।"));
+    String lang=language==null?"hi":language.toLowerCase();
+    switch(lang){
+      case "en": return new ApiDtos.SummaryResponse("An AI summary is unavailable right now; here are the key points.",Arrays.asList("This article covers the main information about current events.","The development may affect the related sector.","Await official updates for more details."));
+      case "fr": return new ApiDtos.SummaryResponse("Le résumé IA est indisponible pour le moment ; voici les points clés.",Arrays.asList("Cet article présente les principales informations sur l'actualité.","Cet événement pourrait affecter le secteur concerné.","Attendez les mises à jour officielles pour plus de détails."));
+      case "es": return new ApiDtos.SummaryResponse("El resumen con IA no está disponible ahora; estos son los puntos clave.",Arrays.asList("Este artículo presenta la información principal sobre la actualidad.","El acontecimiento podría afectar al sector relacionado.","Espere actualizaciones oficiales para más detalles."));
+      default: return new ApiDtos.SummaryResponse(s,Arrays.asList("यह लेख वर्तमान घटनाक्रम की मुख्य जानकारी देता है।",s,"आगे के आधिकारिक अपडेट की प्रतीक्षा है।"));
     }
-    return new ApiDtos.SummaryResponse(s,Arrays.asList("This article provides the main information about current events.",s,"Await official updates for more details."));
   }
   private String shorten(String s){return s==null?"Summary unavailable":s.substring(0,Math.min(240,s.length()));} private String keyword(String q){if(q==null)return "";String x=q.replaceAll("(?i)(what|show|summarize|today|news|is|the|की|खबर|दिखाएं|सार)"," ").trim();return x;}
 }

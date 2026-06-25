@@ -25,4 +25,3 @@ com\netranews\service\NewsService.class
 com\netranews\repository\BookmarkRepository.class
 com\netranews\dto\ApiDtos$ChatResponse.class
 com\netranews\dto\ApiDtos$CommentRequest.class
-com\netranews\config\CorsConfig.class

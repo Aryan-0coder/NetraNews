@@ -35,7 +35,7 @@ Serve the project root with any static server (use a port other than 8080 so it 
 python -m http.server 5500
 ```
 
-Then open `http://localhost:5500`. Port `5500` is one of the origins allowed by the backend's CORS config.
+Then open `http://localhost:5500`. The backend's CORS config allows any `localhost`/`127.0.0.1` port, so any static-server port works.
 
 The front-end auto-detects the API at `http://localhost:8080`. It also merges in local mock articles and offline AI fallbacks, so it remains usable even if the backend is down.
 
@@ -50,9 +50,15 @@ Backend config is in `backend/src/main/resources/application.yml` and is driven 
 | `LLM_MODEL` | `llama-3.3-70b-versatile` | Model id (must match the provider). |
 | `MONGODB_URI` | `mongodb://localhost:27017/netradb` | Mongo connection; set an Atlas URI for the cloud. |
 | `PORT` | `8080` | API port. |
-| `CORS_ORIGINS` | `localhost:3000,5500,8080` | Allowed front-end origins. |
+| `CORS_ORIGINS` | `localhost:3000,5500,8080` | Extra allowed front-end origins. Any `localhost`/`127.0.0.1` port is allowed automatically, so you rarely need to set this. |
+| `ADMIN_EMAIL` | _(empty)_ | Email of the admin account. Set with `ADMIN_PASSWORD` to enable the admin dashboard. |
+| `ADMIN_PASSWORD` | _(empty)_ | Password for the admin account. Both empty → no admin seeding. |
 
 `.env.local` is gitignored — **never commit real keys.**
+
+### Admin dashboard
+
+Set `ADMIN_EMAIL` and `ADMIN_PASSWORD` in `.env.local`. On startup the backend creates that account (or promotes an existing user) to role `ADMIN`. Log in with those credentials to access the admin dashboard, where you can add, edit, and delete articles. Without both vars, admin seeding is skipped.
 
 ### Choosing an AI provider
 
@@ -92,10 +98,12 @@ AI:
 
 - Responsive homepage, category/search listings, and article pages
 - Interest-based feed ranking, bookmarks, and comments
-- AI summary, multi-language translation, and a grounded news chatbot (netrabot)
+- Whole-page UI in 4 languages (Hindi, English, French, Spanish) via a language switcher
+- AI summary, per-article translation, and a hybrid news chatbot (netrabot) that prefers NetraNews articles but falls back to general knowledge when they don't cover the question
+- Role-gated admin dashboard for article CRUD (visible only to `ADMIN` users)
 - Browser text-to-speech, breaking-news strip, mobile drawer, and search panel
 
-Front-end auth is a `localStorage`-based demo. Production auth should use Spring Security, BCrypt (already used for password hashing), and short-lived JWTs rather than client-side identity.
+Front-end auth is a `localStorage`-based demo (it falls back to local accounts when the backend is offline). Production auth should use Spring Security, BCrypt (already used for password hashing), and short-lived JWTs rather than client-side identity.
 
 ## Build & test
 

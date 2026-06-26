@@ -43,27 +43,29 @@ Standard Spring layered structure under `com.netranews`: `controller` → `servi
 
 - **`dto/ApiDtos.java`** — all request/response DTOs are nested static classes in this one file (`Register`, `Login`, `AuthResponse`, `AiRequest`, `SummaryResponse`, `ChatResponse`, etc.).
 - **`error/ApiExceptionHandler.java`** — global `@RestControllerAdvice` that maps exceptions to HTTP status + a JSON `{timestamp, status, error}` body. Throw these from services to control responses: `NoSuchElementException` → 404, `IllegalArgumentException` → 400, `IllegalStateException` → 503.
-- **`AiService`** — calls an OpenAI-compatible `/chat/completions` endpoint via `RestTemplate` (`generate()`), configured by `llm.base-url` / `llm.model` / `llm.api-key`. Default provider is **Groq** (`api.groq.com/openai/v1`, `llama-3.3-70b-versatile`); the same code path works for OpenRouter, Mistral, Ollama, LM Studio, etc. by changing those env vars. **Every AI method has a language-aware (hi/en) offline fallback** used when `apiKey` is empty or the call throws. Preserve this fallback pattern when editing AI code — the app must work without a key.
+- **`AiService`** — calls an OpenAI-compatible `/chat/completions` endpoint via `RestTemplate` (`generate()`), configured by `llm.base-url` / `llm.model` / `llm.api-key`. Default provider is **Groq** (`api.groq.com/openai/v1`, `llama-3.3-70b-versatile`); the same code path works for OpenRouter, Mistral, Ollama, LM Studio, etc. by changing those env vars. **Every AI method has a language-aware offline fallback** (hi/en/fr/es for summaries; hi/en for chat) used when `apiKey` is empty or the call throws. Preserve this fallback pattern when editing AI code — the app must work without a key. NetraBot chat is **hybrid**: it prefers the supplied NetraNews articles but falls back to the model's general knowledge (with a disclaimer) when they don't cover the question. Because the offline summary fallback can't translate the Hindi source, non-Hindi fallbacks return fully localized generic text rather than passing Hindi through.
 - **`NewsService.personalized`** — interest-based feed ranking via a stable sort that floats articles whose `category` is in the user's interests to the top, keeping chronological order within each group.
+- **`config/AdminSeeder.java`** — a `CommandLineRunner` that, when `ADMIN_EMAIL` + `ADMIN_PASSWORD` are both set, creates (or promotes an existing user to) a `role=ADMIN` account at startup so the role-gated admin dashboard is reachable. No-op when either is blank. Users default to `role=USER`; `AuthResponse` returns the role so the front-end can gate the admin view.
 
 Code style note: backend files are written very densely (multiple statements per line, minimal whitespace). Match the surrounding style when editing.
 
 ### Key endpoint paths (note inconsistencies)
 
 - News CRUD + `/api/news/bulk` (seed many), `/api/news/feed/{email}`, `/api/news/count`.
-- Auth: `/api/auth/register`, `/api/auth/login`, `PUT /api/auth/users/{email}/interests`.
+- Auth: `/api/auth/register`, `/api/auth/login`, `PUT /api/auth/users/{email}/interests`. Login/register responses include `role` (`USER`/`ADMIN`).
 - Interactions: `/api/bookmarks/{email}[/{newsId}]`, `/api/news/{newsId}/comments`.
 - AI: `POST /api/ai/summarize`, `POST /api/ai/chat`, `GET /api/ai/translate/{id}/{language}`.
 
 The README documents some of these with older/different paths (e.g. `/api/ai/summary`, `/api/news/{id}/translate`) — trust the controllers, not the README.
 
-### CORS — two overlapping configs
+### CORS — single config
 
-Both `config/CorsConfig.java` (hardcoded `http://localhost:5500`, mapping `/**`) and `config/WebConfig.java` (env-driven `app.cors-origins`, mapping `/api/**`) are active `@Configuration` classes. When changing allowed origins, update the relevant one (or consolidate) — overlapping mappings can produce confusing behavior.
+`config/WebConfig.java` is now the **only** CORS config (the old `CorsConfig.java` was removed to end the overlapping-mappings confusion). It maps `/api/**` and uses `allowedOriginPatterns` to allow any `http://localhost:[*]` / `http://127.0.0.1:[*]` port, plus any extra origins from `app.cors-origins` (`CORS_ORIGINS`), with `allowCredentials(true)`. So the front-end works on whatever static-server port you pick (5500, 3000, …) without config changes. When changing allowed origins, edit this file or set `CORS_ORIGINS`.
 
 ## Front-end architecture
 
-- **`assets/js/app.js`** — the core SPA: hash router (`route()`), all view renderers (`home`, `article`, `listing`, `profile`, `admin`), the `API` fetch wrapper (3s timeout via `AbortController`), and `state` persisted to `localStorage` (`nn_user`, `nn_bookmarks`, `nn_interests`, `nn_language`).
+- **`assets/js/app.js`** — the core SPA: hash router (`route()`), all view renderers (`home`, `article`, `listing`, `profile`, `admin`), the `API` fetch wrapper (3s timeout via `AbortController`), and `state` persisted to `localStorage` (`nn_user`, `nn_bookmarks`, `nn_interests`, `nn_language`). The `admin` view and the `.admin-only` nav items are gated on `state.user.role === 'ADMIN'` (`applyAdminVisibility`); admin form submits/deletes call the news CRUD endpoints.
+- **Multi-language UI** — `LANGS = ['hi','en','fr','es']`; `setLanguage()` persists `nn_language` and re-renders the whole page via `applyStaticI18n()` (data-i18n driven), not just AI output. The language switcher and the per-article translate control both flow through this.
 - **`assets/js/data.js`** — `CATEGORIES` and the `ARTICLES` mock array (Hindi content). Used as the standalone data source and merged with backend results.
 - **`assets/js/news.js`, `article.js`** — additional view/feature logic.
 - Remote and local articles are merged (`mergeArticles`) so the UI stays populated even if the API returns nothing. Article IDs are coerced to strings throughout for cross-source consistency.
@@ -72,7 +74,7 @@ UI text, categories, and content are Hindi (Devanagari). Auth in the front-end i
 
 ## Configuration
 
-`backend/src/main/resources/application.yml` reads env vars: `PORT` (8080), `MONGODB_URI` (defaults to local `mongodb://localhost:27017/netradb`), `LLM_BASE_URL` (`https://api.groq.com/openai/v1`), `LLM_API_KEY` (empty default → offline fallbacks), `LLM_MODEL` (`llama-3.3-70b-versatile`), `CORS_ORIGINS`. Set `MONGODB_URI` to an Atlas connection string to use the cloud cluster instead of local Mongo.
+`backend/src/main/resources/application.yml` reads env vars: `PORT` (8080), `MONGODB_URI` (defaults to local `mongodb://localhost:27017/netradb`), `LLM_BASE_URL` (`https://api.groq.com/openai/v1`), `LLM_API_KEY` (empty default → offline fallbacks), `LLM_MODEL` (`llama-3.3-70b-versatile`), `CORS_ORIGINS`, and `ADMIN_EMAIL` / `ADMIN_PASSWORD` (both empty → no admin seeding). Set `MONGODB_URI` to an Atlas connection string to use the cloud cluster instead of local Mongo.
 
 **Live AI is enabled via Groq.** A Groq API key is supplied at runtime through the `LLM_API_KEY` env var (never hardcoded in `application.yml` or committed). With the key set, the AI endpoints return real Llama 3.3 70B output; without it they fall back to templated Hindi/English text. The standard way to provide it is `backend/.env.local` (copied from `.env.example`) loaded by `./run.sh` / `run.cmd` — see the Commands section. Get a key at https://console.groq.com/keys.
 

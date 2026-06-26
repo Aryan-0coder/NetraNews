@@ -1,20 +1,27 @@
 package com.netranews.service;
-import java.util.*; 
-import org.springframework.beans.factory.annotation.Value; 
-import org.springframework.http.*; 
-import org.springframework.stereotype.Service; 
-import org.springframework.web.client.RestTemplate; 
-import com.fasterxml.jackson.databind.*; 
-import com.netranews.dto.ApiDtos; 
+import java.util.*;
+import javax.annotation.PostConstruct;
+import org.slf4j.Logger; import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.*;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+import com.fasterxml.jackson.databind.*;
+import com.netranews.dto.ApiDtos;
 import com.netranews.model.News;
 @Service public class AiService {
-  private final NewsService news; 
-  private final RestTemplate http=new RestTemplate(); 
+  private static final Logger log=LoggerFactory.getLogger(AiService.class);
+  private final NewsService news;
+  private final RestTemplate http=new RestTemplate();
   private final ObjectMapper json=new ObjectMapper();
   @Value("${llm.api-key:}") private String apiKey;
   @Value("${llm.model}") private String model;
   @Value("${llm.base-url}") private String baseUrl;
   public AiService(NewsService n){news=n;}
+  // Normalize injected config so a stray surrounding quote/space (e.g. from a naive .env loader on Windows)
+  // can't silently break Bearer auth and force every AI call down its offline fallback. Never log the key itself.
+  @PostConstruct void init(){apiKey=clean(apiKey);model=clean(model);baseUrl=clean(baseUrl);log.info("AiService ready: llm key {}, base-url={}, model={}",apiKey.isEmpty()?"MISSING (offline fallbacks)":"present",baseUrl,model);}
+  private static String clean(String v){if(v==null)return "";v=v.trim();if(v.length()>=2){char a=v.charAt(0),b=v.charAt(v.length()-1);if((a=='\''&&b=='\'')||(a=='"'&&b=='"'))v=v.substring(1,v.length()-1).trim();}return v;}
   public ApiDtos.SummaryResponse summarize(ApiDtos.AiRequest req){
     News item=req.articleId==null?null:news.get(req.articleId);
     String content=item!=null?item.getTitle()+"\n"+item.getContent():req.content;
@@ -27,6 +34,7 @@ import com.netranews.model.News;
       root.path("keyPoints").forEach(p->points.add(p.asText()));
       return new ApiDtos.SummaryResponse(root.path("summary").asText(fallback),points);
     }catch(Exception e){
+      log.warn("LLM summarize failed, using fallback: {}",e.toString());
       return fallbackSummary(fallback, req.language);
     }
   }
@@ -51,13 +59,14 @@ import com.netranews.model.News;
       String prompt="You are NetraBot, a helpful news assistant. Prefer the supplied NetraNews articles when they are relevant. If they do not cover the question, answer from your general knowledge and briefly note that it is not from NetraNews's articles. You have no live internet access, so for 'today'/'latest' style questions add a short caveat that your information may be out of date. Reply only in this language: "+req.language+".\nNEWS:\n"+source+"\nQUESTION: "+req.message;
       return new ApiDtos.ChatResponse(generate(prompt));
     }catch(Exception e){
+      log.warn("LLM chat failed, using fallback: {}",e.toString());
       if(req!=null && req.language!=null && req.language.equalsIgnoreCase("hi")){
         return new ApiDtos.ChatResponse("अभी AI सेवा उपलब्ध नहीं है। संबंधित खबर: "+(context.isEmpty()?"नहीं मिली":context.get(0).getTitle()));
       }
       return new ApiDtos.ChatResponse("AI service unavailable. Related story: "+(context.isEmpty()?"not found":context.get(0).getTitle()));
     }
   }
-  public Map<String,String> translate(String id,String language){News n=news.get(id);if(apiKey.isEmpty()){Map<String,String> m=new HashMap<>();m.put("title",n.getTitle());m.put("summary",n.getSummary());m.put("content",n.getContent());return m;}try{JsonNode root=json.readTree(generate("Translate to "+language+". Return JSON only with title, summary, content:\n"+json.writeValueAsString(n)));Map<String,String> m=new HashMap<>();m.put("title",root.path("title").asText());m.put("summary",root.path("summary").asText());m.put("content",root.path("content").asText());return m;}catch(Exception e){throw new IllegalStateException("Translation service unavailable");}}
+  public Map<String,String> translate(String id,String language){News n=news.get(id);if(apiKey.isEmpty()){Map<String,String> m=new HashMap<>();m.put("title",n.getTitle());m.put("summary",n.getSummary());m.put("content",n.getContent());return m;}try{JsonNode root=json.readTree(generate("Translate to "+language+". Return JSON only with title, summary, content:\n"+json.writeValueAsString(n)));Map<String,String> m=new HashMap<>();m.put("title",root.path("title").asText());m.put("summary",root.path("summary").asText());m.put("content",root.path("content").asText());return m;}catch(Exception e){log.warn("LLM translate failed: {}",e.toString());throw new IllegalStateException("Translation service unavailable");}}
   // OpenAI-compatible chat completions (Groq, OpenRouter, Mistral, Ollama, LM Studio, ...). Provider is set via llm.base-url / llm.model.
   private String generate(String prompt)throws Exception{
     String url=baseUrl+"/chat/completions";

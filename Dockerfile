@@ -3,7 +3,7 @@
 FROM maven:3.9-eclipse-temurin-17 AS build
 WORKDIR /app
 COPY . .
-RUN cd backend && ./mvnw -q -DskipTests package
+RUN chmod +x backend/mvnw && cd backend && ./mvnw -q -DskipTests package
 
 FROM eclipse-temurin:17-jre
 WORKDIR /app

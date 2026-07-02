@@ -25,4 +25,10 @@ public class AiController {
   public Map<String,String> translate(@PathVariable String id,@PathVariable String language){
     return ai.translate(id,language);
   }
+
+  // Content-based translation so local/mock articles (not stored in Mongo) can also be translated.
+  @PostMapping("/translate")
+  public Map<String,String> translateContent(@RequestBody ApiDtos.TranslateRequest req){
+    return ai.translateContent(req.title,req.summary,req.content,req.language);
+  }
 }

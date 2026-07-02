@@ -8,6 +8,7 @@ public final class ApiDtos {
   public static class Interests { public List<String> interests=new ArrayList<>(); }
   public static class CommentRequest { @NotBlank public String userEmail; @NotBlank public String userName; @NotBlank public String text; }
   public static class AiRequest { public String articleId; public String content; public String message; public String language="hi"; }
+  public static class TranslateRequest { public String title; public String summary; public String content; public String language="en"; }
   public static class SummaryResponse { public String summary; public List<String> keyPoints; public SummaryResponse(String s,List<String> k){summary=s;keyPoints=k;} }
   public static class ChatResponse { public String answer; public ChatResponse(String a){answer=a;} }
 }

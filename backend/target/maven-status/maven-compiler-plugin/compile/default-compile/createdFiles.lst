@@ -17,6 +17,7 @@ com\netranews\error\ApiExceptionHandler.class
 com\netranews\dto\ApiDtos$AuthResponse.class
 com\netranews\dto\ApiDtos$Login.class
 com\netranews\dto\ApiDtos$SummaryResponse.class
+com\netranews\dto\ApiDtos$TranslateRequest.class
 com\netranews\repository\UserRepository.class
 com\netranews\model\Comment.class
 com\netranews\dto\ApiDtos$Register.class

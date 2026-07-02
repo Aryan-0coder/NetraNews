@@ -17,13 +17,13 @@ import java.util.List; import javax.validation.Valid; import org.springframework
   @GetMapping("/feed/{email}") public List<News> feed(@PathVariable String email){
     return news.personalized(auth.user(email).getInterests());
   }
-  @PostMapping @ResponseStatus(HttpStatus.CREATED) public News create(@Valid @RequestBody News item){
-    return news.save(item);
+  @PostMapping @ResponseStatus(HttpStatus.CREATED) public News create(@RequestHeader(value="X-User-Email",required=false) String actor,@Valid @RequestBody News item){
+    auth.requireAdmin(actor);return news.save(item);
   }
   // Allows Postman or an admin import tool to seed multiple articles in one request.
-  @PostMapping("/bulk") @ResponseStatus(HttpStatus.CREATED) public List<News> createBulk(@RequestBody List<@Valid News> items){return news.saveAll(items);}
-  @PutMapping("/{id}") public News update(@PathVariable String id,@Valid @RequestBody News item){news.get(id);item.setId(id);return news.save(item);}
-  @DeleteMapping("/{id}") @ResponseStatus(HttpStatus.NO_CONTENT) public void delete(@PathVariable String id){news.delete(id);}
+  @PostMapping("/bulk") @ResponseStatus(HttpStatus.CREATED) public List<News> createBulk(@RequestHeader(value="X-User-Email",required=false) String actor,@RequestBody List<@Valid News> items){auth.requireAdmin(actor);return news.saveAll(items);}
+  @PutMapping("/{id}") public News update(@RequestHeader(value="X-User-Email",required=false) String actor,@PathVariable String id,@Valid @RequestBody News item){auth.requireAdmin(actor);news.get(id);item.setId(id);return news.save(item);}
+  @DeleteMapping("/{id}") @ResponseStatus(HttpStatus.NO_CONTENT) public void delete(@RequestHeader(value="X-User-Email",required=false) String actor,@PathVariable String id){auth.requireAdmin(actor);news.delete(id);}
   @GetMapping("/count")
   public long count() {
     return news.list(null, null).size();

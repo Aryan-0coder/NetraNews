@@ -1,6 +1,9 @@
 const $=(s,n=document)=>n.querySelector(s), $$=(s,n=document)=>[...n.querySelectorAll(s)];
 const main=$('#main'), fallbackImage='https://placehold.co/1200x675/252525/ffffff?text=NetraNews';
-const API_ORIGIN=location.port==='8080'?location.origin:'http://localhost:8080';
+// Local dev: front-end on any static-server port talks to the backend on :8080.
+// Deployed (Railway etc.): the Spring Boot service serves BOTH the site and /api, so use same origin.
+const IS_LOCAL=location.hostname==='localhost'||location.hostname==='127.0.0.1';
+const API_ORIGIN=IS_LOCAL?(location.port==='8080'?location.origin:'http://localhost:8080'):location.origin;
 const articleImages={
   'राजनीति':'https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?auto=format&fit=crop&w=1200&q=80',
   'देश':'https://images.unsplash.com/photo-1519692933481-e162a57d6721?auto=format&fit=crop&w=1200&q=80',

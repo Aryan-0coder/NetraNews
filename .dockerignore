@@ -1,0 +1,7 @@
+backend/target/
+.git/
+.idea/
+.vscode/
+netranews/
+*.md
+backend/.env.local

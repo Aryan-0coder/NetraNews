@@ -20,7 +20,7 @@ import com.netranews.model.News;
   public AiService(NewsService n){news=n;}
   // Normalize injected config so a stray surrounding quote/space (e.g. from a naive .env loader on Windows)
   // can't silently break Bearer auth and force every AI call down its offline fallback. Never log the key itself.
-  @PostConstruct void init(){apiKey=clean(apiKey);model=clean(model);baseUrl=clean(baseUrl);log.info("AiService ready: llm key {}, base-url={}, model={}",apiKey.isEmpty()?"MISSING (offline fallbacks)":"present",baseUrl,model);}
+  @PostConstruct void init(){apiKey=clean(apiKey);model=clean(model);baseUrl=clean(baseUrl);if(apiKey.isEmpty()){log.warn("\n***************************************************************\n* LLM_API_KEY is MISSING — AI summary/chat/translate will use *\n* generic OFFLINE FALLBACKS (no real LLM output).            *\n* Start the backend via ./run.sh (or run.cmd) so .env.local  *\n* is loaded, or export LLM_API_KEY before launching.         *\n***************************************************************");}else{log.info("AiService ready: llm key present, base-url={}, model={}",baseUrl,model);}}
   private static String clean(String v){if(v==null)return "";v=v.trim();if(v.length()>=2){char a=v.charAt(0),b=v.charAt(v.length()-1);if((a=='\''&&b=='\'')||(a=='"'&&b=='"'))v=v.substring(1,v.length()-1).trim();}return v;}
   public ApiDtos.SummaryResponse summarize(ApiDtos.AiRequest req){
     News item=req.articleId==null?null:news.get(req.articleId);

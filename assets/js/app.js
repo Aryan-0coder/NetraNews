@@ -146,7 +146,6 @@ const API={
   interests(email,interests){return this.request(`/auth/users/${encodeURIComponent(email)}/interests`,{method:'PUT',body:JSON.stringify({interests})})},
   bookmarks(email){return this.request(`/bookmarks/${encodeURIComponent(email)}`)}, addBookmark(email,id){return this.request(`/bookmarks/${encodeURIComponent(email)}/${id}`,{method:'POST'})}, removeBookmark(email,id){return this.request(`/bookmarks/${encodeURIComponent(email)}/${id}`,{method:'DELETE'})}, comments(id){return this.request(`/news/${id}/comments`)}, comment(id,body){return this.request(`/news/${id}/comments`,{method:'POST',body:JSON.stringify(body)})},
   summarize(body){return this.request('/ai/summarize',{method:'POST',body:JSON.stringify(body),timeout:25000})},
-  translate(id,language){return this.request(`/ai/translate/${id}/${encodeURIComponent(language)}`,{timeout:25000})},
   translateContent(body){return this.request('/ai/translate',{method:'POST',body:JSON.stringify(body),timeout:25000})},
   chat(message,language){return this.request('/ai/chat',{method:'POST',body:JSON.stringify({message,language}),timeout:25000})}
 };

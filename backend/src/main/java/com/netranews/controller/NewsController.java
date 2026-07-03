@@ -26,6 +26,6 @@ import java.util.List; import javax.validation.Valid; import org.springframework
   @DeleteMapping("/{id}") @ResponseStatus(HttpStatus.NO_CONTENT) public void delete(@RequestHeader(value="X-User-Email",required=false) String actor,@PathVariable String id){auth.requireAdmin(actor);news.delete(id);}
   @GetMapping("/count")
   public long count() {
-    return news.list(null, null).size();
+    return news.count();
   }
 }

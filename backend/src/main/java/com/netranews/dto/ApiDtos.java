@@ -3,7 +3,7 @@ import java.util.ArrayList; import java.util.List; import javax.validation.const
 public final class ApiDtos {
   private ApiDtos(){}
   public static class Register { @NotBlank public String fullName; @Email public String email; @NotBlank public String password; public List<String> interests=new ArrayList<>(); }
-  public static class Login { @Email public String email; @NotBlank public String password; }
+  public static class Login { @NotBlank @Email public String email; @NotBlank public String password; }
   public static class AuthResponse { public String id,fullName,email,role; public List<String> interests; public AuthResponse(String i,String n,String e,String r,List<String> x){id=i;fullName=n;email=e;role=r;interests=x;} }
   public static class Interests { public List<String> interests=new ArrayList<>(); }
   public static class CommentRequest { @NotBlank public String userEmail; @NotBlank public String userName; @NotBlank public String text; }

@@ -15,8 +15,8 @@ import com.netranews.model.News;
   private final RestTemplate http=new RestTemplate();
   private final ObjectMapper json=new ObjectMapper();
   @Value("${llm.api-key:}") private String apiKey;
-  @Value("${llm.model}") private String model;
-  @Value("${llm.base-url}") private String baseUrl;
+  @Value("${llm.model:llama-3.3-70b-versatile}") private String model;
+  @Value("${llm.base-url:https://api.groq.com/openai/v1}") private String baseUrl;
   public AiService(NewsService n){news=n;}
   // Normalize injected config so a stray surrounding quote/space (e.g. from a naive .env loader on Windows)
   // can't silently break Bearer auth and force every AI call down its offline fallback. Never log the key itself.
@@ -44,7 +44,7 @@ import com.netranews.model.News;
     if(context.isEmpty())context=news.list(null,null);
     context=context.subList(0,Math.min(5,context.size()));
     StringBuilder source=new StringBuilder();
-    for(News n:context) source.append("TITLE: ").append(n.getTitle()).append("\n").append(n.getSummary()).append("\n");
+    for(News n:context) source.append("TITLE: ").append(n.getTitle()).append("\n").append(n.getSummary()==null?"":n.getSummary()).append("\n");
 
     // Language-aware offline fallback when API key is missing
     if(apiKey.isEmpty()){ 

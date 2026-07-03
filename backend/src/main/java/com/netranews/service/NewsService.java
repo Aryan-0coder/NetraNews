@@ -13,9 +13,10 @@ import com.netranews.repository.NewsRepository;
       return news.findByTitleContainingIgnoreCaseOrContentContainingIgnoreCaseOrderByPublishedAtDesc(query,query);
     if(category!=null&&!category.trim().isEmpty())
       return news.findByCategoryIgnoreCaseOrderByPublishedAtDesc(category);
-    return news.findAll();
+    return news.findAllByOrderByPublishedAtDesc();
   }
   public News get(String id){return news.findById(id).orElseThrow(()->new NoSuchElementException("Article not found"));}
+  public News find(String id){return news.findById(id).orElse(null);}
   public News save(News item){
     return news.save(item);
   }
@@ -24,10 +25,11 @@ import com.netranews.repository.NewsRepository;
     news.deleteById(id);
   }
   public List<News> saveAll(List<News> items){return news.saveAll(items);}
+  public long count(){return news.count();}
   // Stable sorting keeps chronological order inside preferred and non-preferred groups.
   public List<News> personalized(List<String> interests)
   {
     Set<String> preferred=new HashSet<>(interests==null?Collections.emptyList():interests);
-    return news.findAll().stream().sorted(Comparator.comparing((News n)->!preferred.contains(n.getCategory()))).collect(Collectors.toList());
+    return news.findAllByOrderByPublishedAtDesc().stream().sorted(Comparator.comparing((News n)->!preferred.contains(n.getCategory()))).collect(Collectors.toList());
   }
 }

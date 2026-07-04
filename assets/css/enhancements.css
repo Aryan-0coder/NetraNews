@@ -18,3 +18,45 @@
 .admin-row-actions{display:flex;gap:8px;flex-shrink:0}
 .tool-btn.danger{color:var(--red);border-color:var(--red)}
 .tool-btn.danger:hover{background:#fff5f5}
+
+/* ---- Cross-device / mobile-friendly refinements ---- */
+/* never let media or wide content force horizontal scrolling */
+img,video,iframe{max-width:100%}
+*{-webkit-tap-highlight-color:transparent}
+/* tablets and below */
+@media(max-width:900px){
+  .article-tools{flex-wrap:wrap;gap:8px}
+  .admin-form{max-width:100%}
+  .stats,.admin-page .stats{flex-wrap:wrap}
+}
+/* phones */
+@media(max-width:640px){
+  /* comfortable tap targets */
+  .tool-btn,.primary-btn,.text-btn,.account-btn,.register-btn,.lang-switcher,button,select{min-height:40px}
+  /* article action bar wraps cleanly and controls stretch */
+  .article-tools{display:flex;flex-wrap:wrap}
+  .article-tools .tool-btn,.article-tools select{flex:1 1 auto}
+  /* modals / dialogs fit the screen */
+  dialog,#modal{width:min(94vw,420px);max-width:94vw;box-sizing:border-box}
+  .auth-form input,.auth-form select,.auth-form textarea{width:100%;box-sizing:border-box;font-size:16px}
+  /* interest / category chips wrap */
+  .interest-grid,.chips,.tag-row{flex-wrap:wrap}
+  /* chatbot uses nearly full width and height on small screens */
+  .chat-panel{width:calc(100vw - 20px);right:10px;left:10px;bottom:76px}
+  .chat-panel .chat-log{height:min(52vh,340px)}
+  /* admin rows stack so action buttons stay reachable */
+  .admin-row{flex-direction:column;align-items:stretch}
+  .admin-row-actions{justify-content:flex-end}
+  /* prevent any accidental page-wide horizontal scroll */
+  body{overflow-x:hidden}
+}
+/* small phones */
+@media(max-width:400px){
+  .lead h1{font-size:27px}
+  .article-title{font-size:29px}
+  .side-stack{grid-template-columns:1fr}
+  .category-grid,.recommend .category-grid{grid-template-columns:1fr}
+  .list-card{grid-template-columns:1fr}
+  .list-card .visual{height:180px}
+  .brand{font-size:20px}
+}

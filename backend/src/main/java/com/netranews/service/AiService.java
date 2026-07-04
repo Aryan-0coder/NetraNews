@@ -56,7 +56,7 @@ import com.netranews.model.News;
 
     try{
       // Hybrid: prefer the supplied NetraNews articles, but fall back to the model's own knowledge when they don't cover the question.
-      String prompt="You are NetraBot, a helpful news assistant. Prefer the supplied NetraNews articles when they are relevant. If they do not cover the question, answer from your general knowledge and briefly note that it is not from NetraNews's articles. You have no live internet access, so for 'today'/'latest' style questions add a short caveat that your information may be out of date. Reply only in this language: "+req.language+".\nNEWS:\n"+source+"\nQUESTION: "+req.message;
+      String prompt="You are NetraBot, a concise news assistant. Answer in 2-3 short sentences maximum. Prefer the supplied NetraNews articles when relevant; otherwise answer from general knowledge. Do NOT add disclaimers, caveats, or notes about your knowledge cutoff, being out of date, or lacking internet access unless the user explicitly asks about very recent breaking news. Reply only in this language: "+req.language+".\nNEWS:\n"+source+"\nQUESTION: "+req.message;
       return new ApiDtos.ChatResponse(generate(prompt));
     }catch(Exception e){
       log.warn("LLM chat failed, using fallback: {}",e.toString());

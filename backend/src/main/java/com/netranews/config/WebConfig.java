@@ -16,6 +16,9 @@ public class WebConfig implements WebMvcConfigurer {
   @Override public void addCorsMappings(CorsRegistry registry) {
     List<String> patterns=new ArrayList<>();
     patterns.add("http://localhost:[*]"); patterns.add("http://127.0.0.1:[*]");
+    // Allow the app's own deployed origin (Railway, Render, etc.) so the bundled front-end,
+    // served same-origin over https, can call /api without a per-domain CORS_ORIGINS entry.
+    patterns.add("https://*.up.railway.app"); patterns.add("https://*.onrender.com");
     for(String o:origins.split(",")){String t=o.trim();if(!t.isEmpty())patterns.add(t);}
     registry.addMapping("/api/**").allowedOriginPatterns(patterns.toArray(new String[0]))
       .allowedMethods("GET","POST","PUT","DELETE","OPTIONS").allowedHeaders("*").allowCredentials(true);

@@ -1,6 +1,8 @@
 # NetraNews
 
-A responsive, Hindi-language news website with an AI assistant. The front-end is a dependency-free single-page app; the backend is a Spring Boot + MongoDB REST API with an OpenAI-compatible LLM integration (Groq by default) for summaries, translation, and a grounded news chatbot.
+A responsive, Hindi-language news website with an AI assistant. The front-end is a dependency-free single-page app; the backend is a Spring Boot + MongoDB REST API with an OpenAI-compatible LLM integration (default: Groq).
+
+🌐 **[Live Project](https://netranews-zq0n.onrender.com)**
 
 ## Prerequisites
 
@@ -58,7 +60,7 @@ Backend config is in `backend/src/main/resources/application.yml` and is driven 
 
 ### Admin dashboard
 
-Set `ADMIN_EMAIL` and `ADMIN_PASSWORD` in `.env.local`. On startup the backend creates that account (or promotes an existing user) to role `ADMIN`. Log in with those credentials to access the admin dashboard, where you can add, edit, and delete articles. Without both vars, admin seeding is skipped.
+Set `ADMIN_EMAIL` and `ADMIN_PASSWORD` in `.env.local`. On startup the backend creates that account (or promotes an existing user) to role `ADMIN`. Log in with those credentials to access the admin dashboard.
 
 ### Choosing an AI provider
 
@@ -103,7 +105,7 @@ AI:
 - Role-gated admin dashboard for article CRUD (visible only to `ADMIN` users)
 - Browser text-to-speech, breaking-news strip, mobile drawer, and search panel
 
-Front-end auth is a `localStorage`-based demo (it falls back to local accounts when the backend is offline). Production auth should use Spring Security, BCrypt (already used for password hashing), and short-lived JWTs rather than client-side identity.
+Front-end auth is a `localStorage`-based demo (it falls back to local accounts when the backend is offline). Production auth should use Spring Security, BCrypt (already used for password hashing), and a proper session backend.
 
 ## Build & test
 
